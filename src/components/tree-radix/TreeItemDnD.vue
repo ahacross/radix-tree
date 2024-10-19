@@ -35,10 +35,9 @@ import {
   monitorForElements
 } from '@atlaskit/pragmatic-drag-and-drop/element/adapter'
 import {
-  type Instruction,
-  type ItemMode,
   attachInstruction,
-  extractInstruction
+  extractInstruction,
+  type Instruction
 } from '@atlaskit/pragmatic-drag-and-drop-hitbox/tree-item'
 import { pointerOutsideOfPreview } from '@atlaskit/pragmatic-drag-and-drop/element/pointer-outside-of-preview'
 import { setCustomNativeDragPreview } from '@atlaskit/pragmatic-drag-and-drop/element/set-custom-native-drag-preview'

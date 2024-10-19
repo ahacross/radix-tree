@@ -1,30 +1,47 @@
 <template>
   <TreeRoot
+    v-model="model"
+    v-model:expanded="expanded"
     class="TreeRoot"
-    :style="{ width }"
     :get-key="(item) => item.key"
     :items
-    :defaultExpanded
-    :defaultValue
-    :multiple="false"
-    :propagate-select="false"
-    v-model="selectedNodes"
+    :default-expanded
+    :default-value
+    :multiple="checkbox"
+    :propagate-select="checkbox"
+    :disabled
   >
     <TreeVirtualizer v-slot="{ item }" :text-content="(opt) => opt.title">
       <TreeItem
+        v-slot="{ handleSelect, handleToggle, isSelected, isIndeterminate, isExpanded }"
         class="TreeItem"
-        v-slot="{ isExpanded }"
         :style="{ 'padding-left': `${item.level + 0.5}rem` }"
         v-bind="item.bind"
       >
         <span
-          v-if="item.hasChildren"
+          v-if="item.value.children?.length"
           class="mdi mdi-chevron-right"
           :class="{ expanded: isExpanded }"
+          @click.stop="handleToggle"
         />
         <span v-else class="icon-placeholder" />
+        <template v-if="checkbox">
+          <button class="checkbox" tabindex="-1" @click.stop="handleSelect">
+            <span
+              class="mdi"
+              :class="{
+                'mdi-minus-box-outline': isIndeterminate,
+                'mdi-checkbox-outline': isSelected,
+                'mdi-checkbox-blank-outline': !isIndeterminate && !isSelected
+              }"
+            />
+          </button>
+          <span class="item-content" @click.stop="handleToggle">
+            {{ item.value.title }}
+          </span>
+        </template>
 
-        <span class="pl-2">
+        <span v-else class="item-content">
           {{ item.value.title }}
         </span>
       </TreeItem>
@@ -33,14 +50,16 @@
 </template>
 
 <script setup lang="ts">
-import { TreeRoot, TreeItem, TreeVirtualizer } from 'radix-vue'
+import { TreeItem, TreeRoot, TreeVirtualizer } from 'radix-vue'
 import { type TreeItemType } from './utils'
 
-const props = withDefaults(
+withDefaults(
   defineProps<{
     items?: TreeItemType[]
     defaultExpanded?: string[]
-    width?: string
+    defaultValue?: TreeItemType[]
+    checkbox?: boolean
+    disabled?: boolean
   }>(),
   {
     items: () => [
@@ -69,19 +88,13 @@ const props = withDefaults(
       }
     ],
     defaultExpanded: () => [],
-    width: '50vw'
+    checkbox: false,
+    disabled: false
   }
 )
 
 const model = defineModel()
-const defaultValue = props.items.flat(5).filter(({ key }) => model.value === key)[0]
-const selectedNodes: Ref<TreeItemType> = ref(defaultValue)
-
-watch(selectedNodes, () => {
-  if (selectedNodes.value) {
-    model.value = selectedNodes.value.key
-  }
-})
+const expanded = defineModel('expanded')
 </script>
 
 <style lang="scss">

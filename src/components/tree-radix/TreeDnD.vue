@@ -1,18 +1,23 @@
 <template>
   <TreeRoot
+    v-model="model"
+    v-model:expanded="expanded"
     class="TreeRoot"
     :items="dndItems"
     :get-key="(item) => item.key"
-    multiple
-    propagate-select
+    :default-expanded
+    :default-value
+    :multiple="checkbox"
+    :propagate-select="checkbox"
+    :disabled
   >
     <TreeVirtualizer v-slot="{ item }" :text-content="(opt) => opt.title">
       <TreeItem
         class="TreeItem"
         :item="item"
         v-bind="item.bind"
+        :checkbox="checkbox"
         :style="{ paddingLeft: `${item.level}rem` }"
-        @select.prevent
       />
     </TreeVirtualizer>
   </TreeRoot>
@@ -24,16 +29,18 @@ import TreeItem from './TreeItemDnD.vue'
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine'
 import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter'
 import {
-  type Instruction,
-  extractInstruction
+  extractInstruction,
+  type Instruction
 } from '@atlaskit/pragmatic-drag-and-drop-hitbox/tree-item'
-import { updateTree, type TreeItemType } from './utils'
+import { type TreeItemType, updateTree } from './utils'
 
 const props = withDefaults(
   defineProps<{
     items?: TreeItemType[]
     defaultExpanded?: string[]
-    width?: string
+    defaultValue?: TreeItemType[]
+    checkbox?: boolean
+    disabled?: boolean
   }>(),
   {
     items: () => [
@@ -61,12 +68,13 @@ const props = withDefaults(
         ]
       }
     ],
-    defaultExpanded: () => [],
-    width: '50vw'
+    defaultExpanded: () => []
   }
 )
+const model = defineModel()
+const expanded = defineModel('expanded')
 
-const dndItems = ref(props.items)
+const dndItems = ref<TreeItemType[] | undefined>(props.items)
 
 watchEffect((onCleanup) => {
   const dndFunction = combine(
@@ -82,9 +90,7 @@ watchEffect((onCleanup) => {
 
         const instruction: Instruction | null = extractInstruction(target.data)
 
-        console.log('onDrop 호출됨', args)
-
-        if (instruction !== null) {
+        if (instruction !== null && dndItems.value) {
           dndItems.value =
             updateTree(dndItems.value, {
               type: 'instruction',
@@ -92,8 +98,6 @@ watchEffect((onCleanup) => {
               itemId,
               targetId
             }) ?? []
-
-          console.log('업데이트된 items:', dndItems.value)
         }
       }
     })
